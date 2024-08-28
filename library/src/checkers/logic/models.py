@@ -187,17 +187,45 @@ class GameState:
         
         new_cells[to_row][to_col] = new_cells[from_row][from_col]
         new_cells[from_row][from_col] = " "
-        
-        if abs(from_row - to_row) == 2 and abs(from_col - to_col) == 2:
-            jumped_row = (from_row + to_row) // 2
-            jumped_col = (from_col + to_col) // 2
-            new_cells[jumped_row][jumped_col] = " "
-        
+
         if to_row == 0 and new_cells[to_row][to_col] == Piece.RED.value:
             new_cells[to_row][to_col] = Piece.RED_KING.value
         elif to_row == 7 and new_cells[to_row][to_col] == Piece.BLACK.value:
             new_cells[to_row][to_col] = Piece.BLACK_KING.value
+
+        jumped_pieces = []
+        if abs(from_row - to_row) == 2 and abs(from_col - to_col) == 2:
+            jumped_row = (from_row + to_row) // 2
+            jumped_col = (from_col + to_col) // 2
+            jumped_pieces.append((jumped_row, jumped_col))
+            new_cells[jumped_row][jumped_col] = " "
+        
+        while True:
+            new_jumps = []
+            for dr, dc in [(-2, -2), (-2, 2), (2, -2), (2, 2)]:
+                jump_r, jump_c = to_row + dr, to_col + dc
+                mid_r, mid_c = to_row + dr // 2, to_col + dc // 2
+
+                if (0 <= jump_r < 8 and 0 <= jump_c < 8 and
+                    new_cells[jump_r][jump_c] == " " and
+                    new_cells[mid_r][mid_c] in [Piece.RED.value, Piece.RED_KING.value, Piece.BLACK.value, Piece.BLACK_KING.value] and
+                    self.is_opponent_piece(new_cells[mid_r][mid_c])):
+                    
+                    new_jumps.append((jump_r, jump_c))
+                    new_cells[mid_r][mid_c] = " "
             
+            if not new_jumps:
+                break
+            
+            for (jump_r, jump_c) in new_jumps:
+                jumped_pieces.append((jump_r, jump_c))
+                to_row, to_col = jump_r, jump_c
+
+                if to_row == 0 and new_cells[to_row][to_col] == Piece.RED.value:
+                    new_cells[to_row][to_col] = Piece.RED_KING.value
+                elif to_row == 7 and new_cells[to_row][to_col] == Piece.BLACK.value:
+                    new_cells[to_row][to_col] = Piece.BLACK_KING.value
+    
         new_grid = Grid(new_cells)
         new_game_state = GameState(grid=new_grid, current_turn=self.next_turn)
         

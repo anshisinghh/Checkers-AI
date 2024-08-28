@@ -110,27 +110,26 @@ def test_king_promotion_red():
     ]
     game_state = GameState(Grid(custom_grid), current_turn=Piece.RED)
 
-    # Move the piece to the last row to promote
     move = game_state.apply_move(7, 7, 0, 0)
     new_grid = move.after_state.grid
     assert new_grid.cells[0][0] == Piece.RED_KING.value
 
 def test_king_promotion_black():
     custom_grid = [
-        ["b", " ", " ", " ", " ", " ", " ", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
+        [" ", " ", " ", " ", " ", " ", "b", " "],
         [" ", " ", " ", " ", " ", " ", " ", " "],
     ]
     game_state = GameState(Grid(custom_grid), current_turn=Piece.BLACK)
 
-    move = game_state.apply_move(0, 0, 7, 0)
+    move = game_state.apply_move(6, 6, 7, 7)
     new_grid = move.after_state.grid
-    assert new_grid.cells[7][0] == Piece.BLACK_KING.value
+    assert new_grid.cells[7][7] == Piece.BLACK_KING.value
 
 def test_king_moves():
     custom_grid = [
@@ -154,6 +153,27 @@ def test_king_moves():
     assert (4, 4) not in moves
     assert (6, 6) not in moves
 
+def test_double_jump_and_king_move():
+    custom_grid = [
+        [" ", " ", " ", " ", " ", " ", " ", " "],
+        [" ", " ", " ", "b", " ", " ", " ", " "],
+        [" ", " ", " ", " ", " ", " ", " ", " "],
+        [" ", " ", " ", "b", " ", " ", " ", " "],
+        [" ", " ", "r", " ", " ", " ", " ", " "], 
+        [" ", " ", " ", " ", " ", " ", " ", " "], 
+        [" ", " ", " ", " ", " ", " ", " ", " "], 
+        [" ", " ", " ", " ", " ", " ", " ", " "], 
+    ]
+    game_state = GameState(Grid(custom_grid), current_turn=Piece.RED)
+
+    moves = game_state.find_valid_moves(4, 2, Piece.RED)
+    assert (0, 2) in moves
+    move = game_state.apply_move(4, 2, 0, 2) 
+    new_grid = move.after_state.grid
+    assert new_grid.cells[0][2] == Piece.RED_KING.value
+    assert new_grid.cells[1][3] == " "
+    assert new_grid.cells[3][3] == " "
+
 if __name__ == "__main__":
     test_initial_game_state()
     test_specific_game_state()
@@ -165,4 +185,5 @@ if __name__ == "__main__":
     test_king_promotion_red()
     test_king_promotion_black()
     test_king_moves()
+    test_double_jump_and_king_move()
     print("All tests passed!")
