@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from checkers.game.players import Player
     from checkers.logic.models import GameState, Grid, Piece
 
 from checkers.logic.exceptions import InvalidGameState
@@ -32,4 +33,7 @@ def validate_winner(grid: Grid, winner: Piece) -> None:
         if (winner == Piece.BLACK and grid.b_count != 0) or \
            (winner == Piece.RED and grid.r_count != 0):
             raise InvalidGameState("Invalid winner: the winner's color must have no remaining pieces.")
-        
+    
+def validate_players(player1: Player, player2: Player) -> None:
+    if player1.piece == player2.piece:
+        raise ValueError("Players must have different pieces.")

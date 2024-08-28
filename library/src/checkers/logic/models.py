@@ -67,6 +67,8 @@ class Move:
     piece: Piece
     from_row: int
     from_col: int
+    to_row: int
+    to_col: int
     before_state: "GameState"
     after_state: "GameState"
 
@@ -161,11 +163,9 @@ class GameState:
                     if 0 <= jump_r < 8 and 0 <= jump_c < 8 and self.grid.cells[jump_r][jump_c] == " ":
                         normal_moves.append((jump_r, jump_c))
 
-        # Find jump moves (recursive search for multi-jumps)
         visited = set()
         jump_moves.extend(explore_jumps(row, col, visited))
 
-        # Combine normal moves and jump moves
         all_moves = set(normal_moves) | set(jump_moves)
 
         return list(all_moves)
@@ -205,6 +205,8 @@ class GameState:
             piece=self.current_turn,
             from_row=from_row,
             from_col=from_col,
+            to_row=to_row,
+            to_col=to_col,
             before_state=self,
             after_state=new_game_state
         )
@@ -224,6 +226,8 @@ class GameState:
                                 piece=self.current_turn,
                                 from_row=row,
                                 from_col=col,
+                                to_row=to_row,
+                                to_col=to_col,
                                 before_state=self,
                                 after_state=GameState(grid=new_grid, current_turn=self.next_turn)
                             ))
