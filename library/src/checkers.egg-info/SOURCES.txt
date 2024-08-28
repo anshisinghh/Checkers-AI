@@ -1,0 +1,8 @@
+pyproject.toml
+src/checkers/__init__.py
+src/checkers.egg-info/PKG-INFO
+src/checkers.egg-info/SOURCES.txt
+src/checkers.egg-info/dependency_links.txt
+src/checkers.egg-info/top_level.txt
+src/checkers/game/__init__.py
+src/checkers/logic/__init__.py
