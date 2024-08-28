@@ -8,11 +8,23 @@ from checkers.logic.validators import validate_game_state, validate_grid, valida
 class Piece(enum.StrEnum):
     BLACK = "b"
     RED = "r"
+    BLACK_KING = "B"
+    RED_KING = "R"
 
     @property
     def other(self) -> "Piece":
-        return Piece.RED if self == Piece.BLACK else Piece.BLACK
+        return Piece.RED if self in [Piece.BLACK, Piece.BLACK_KING] else Piece.BLACK
+    
+    @property
+    def is_king(self) -> bool:
+        return self in [Piece.BLACK_KING, Piece.RED_KING]
 
+    def promote(self) -> "Piece":
+        if self == Piece.BLACK:
+            return Piece.BLACK_KING
+        elif self == Piece.RED:
+            return Piece.RED_KING
+        return self
 
 @dataclass(frozen=True)
 class Grid:
@@ -23,11 +35,11 @@ class Grid:
 
     @cached_property
     def r_count(self) -> int:
-        return sum(row.count("r") for row in self.cells)
+        return sum(row.count("r") + row.count("R") for row in self.cells)
     
     @cached_property
     def b_count(self) -> int:
-        return sum(row.count("b") for row in self.cells)
+        return sum(row.count("b") + row.count("B") for row in self.cells)
     
     @cached_property
     def empty_count(self) -> int:
@@ -105,27 +117,65 @@ class GameState:
         return False
 
     def is_player_piece(self, cell: str, player: Piece) -> bool:
-        return cell == player.value
+        if player == Piece.BLACK or player == Piece.BLACK_KING:
+            return cell in [Piece.BLACK.value, Piece.BLACK_KING.value]
+        elif player == Piece.RED or player == Piece.RED_KING:
+            return cell in [Piece.RED.value, Piece.RED_KING.value]
+        return False
     
     def find_valid_moves(self, row: int, col: int, piece: Piece) -> list[tuple[int, int]]:
-        moves = []
-        directions = [(1, -1), (1, 1)] if self.current_turn == Piece.BLACK else [(-1, -1), (-1, 1)]
-        
+        def explore_jumps(r, c, visited):
+            jumps = []
+            for dr, dc in directions:
+                jump_r, jump_c = r + 2 * dr, c + 2 * dc
+                mid_r, mid_c = r + dr, c + dc
+
+                if (0 <= jump_r < 8 and 0 <= jump_c < 8 and
+                    self.grid.cells[jump_r][jump_c] == " " and
+                    self.grid.cells[mid_r][mid_c] in [Piece.RED.value, Piece.RED_KING.value, Piece.BLACK.value, Piece.BLACK_KING.value] and
+                    self.is_opponent_piece(self.grid.cells[mid_r][mid_c])):
+                    
+                    if (jump_r, jump_c) not in visited:
+                        visited.add((jump_r, jump_c))
+                        jumps.append((jump_r, jump_c))
+                        jumps.extend(explore_jumps(jump_r, jump_c, visited))
+            return jumps
+
+        normal_moves = []
+        jump_moves = []
+
+        if piece == Piece.BLACK:
+            directions = [(1, -1), (1, 1)]
+        elif piece == Piece.RED:
+            directions = [(-1, -1), (-1, 1)]
+        elif piece in [Piece.BLACK_KING, Piece.RED_KING]:
+            directions = [(1, -1), (1, 1), (-1, -1), (-1, 1)]
+
         for dr, dc in directions:
             r, c = row + dr, col + dc
             if 0 <= r < 8 and 0 <= c < 8:
                 if self.grid.cells[r][c] == " ":
-                    moves.append((r, c))
+                    normal_moves.append((r, c))
                 elif self.is_opponent_piece(self.grid.cells[r][c]):
                     jump_r, jump_c = r + dr, c + dc
                     if 0 <= jump_r < 8 and 0 <= jump_c < 8 and self.grid.cells[jump_r][jump_c] == " ":
-                        moves.append((jump_r, jump_c))
-        
-        return moves
+                        normal_moves.append((jump_r, jump_c))
+
+        # Find jump moves (recursive search for multi-jumps)
+        visited = set()
+        jump_moves.extend(explore_jumps(row, col, visited))
+
+        # Combine normal moves and jump moves
+        all_moves = set(normal_moves) | set(jump_moves)
+
+        return list(all_moves)
 
     def is_opponent_piece(self, cell: str) -> bool:
-        return (self.current_turn == Piece.BLACK and cell == Piece.RED.value) or \
-            (self.current_turn == Piece.RED and cell == Piece.BLACK.value)
+        if self.current_turn == Piece.BLACK or self.current_turn == Piece.BLACK_KING:
+            return cell in [Piece.RED.value, Piece.RED_KING.value]
+        elif self.current_turn == Piece.RED or self.current_turn == Piece.RED_KING:
+            return cell in [Piece.BLACK.value, Piece.BLACK_KING.value]
+        return False
 
     def apply_move(self, from_row: int, from_col: int, to_row: int, to_col: int) -> Move:
         if self.grid.cells[from_row][from_col] == " ":
@@ -143,6 +193,11 @@ class GameState:
             jumped_col = (from_col + to_col) // 2
             new_cells[jumped_row][jumped_col] = " "
         
+        if to_row == 0 and new_cells[to_row][to_col] == Piece.RED.value:
+            new_cells[to_row][to_col] = Piece.RED_KING.value
+        elif to_row == 7 and new_cells[to_row][to_col] == Piece.BLACK.value:
+            new_cells[to_row][to_col] = Piece.BLACK_KING.value
+            
         new_grid = Grid(new_cells)
         new_game_state = GameState(grid=new_grid, current_turn=self.next_turn)
         
