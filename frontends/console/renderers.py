@@ -23,17 +23,14 @@ class ConsoleRenderer(Renderer):
                 print(f"{game_state.winner} wins \N{party popper}")
 
     def get_board_string(self, game_state: GameState) -> str:
-        # Define the header and separator for the board
         header = "    A   B   C   D   E   F   G   H"
         separator = "  +" + "---+" * 8
 
         rows = []
         for i, row in enumerate(game_state.grid.cells):
-            # Create the row string with board indices and cell values
             row_str = f"{i + 1} |" + "|".join(f" {cell if cell else "  "} " for cell in row) + "|"
             rows.append(row_str)
 
-        # Combine header, rows, and separator
         return f"{header}\n{separator}\n" + f"\n{separator}\n".join(rows) + f"\n{separator}"
 
 def clear_screen() -> None:
