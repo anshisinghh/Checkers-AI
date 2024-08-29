@@ -1,10 +1,11 @@
-<!-- frontend/index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Checkers</title>
+    <meta name="description" content="Play Checkers with an AI Model">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="book.ico" type="image/x-icon">
+    <title>Checkers AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Honk:wght@400;700&display=swap" rel="stylesheet">
     <style>
         h1 {
@@ -20,7 +21,7 @@
             min-height: 100vh;
         }
         .board-wrapper {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.8);
             padding: 1em;
             width: fit-content;
             height: fit-content;
@@ -82,12 +83,12 @@
             font-size: 16px;
             cursor: pointer;
             border: none;
-            background-color: darkblue;
+            background-color: #ff3eaf;
             color: white;
             border-radius: 5px;
         }
         .reset-button:hover {
-            background-color: lightblue;
+            background-color: #ff7f5d;
         }
         .message {
             text-align: center;
@@ -95,7 +96,6 @@
             margin-top: 20px;
         }
     </style>
-    
 </head>
 <body>
     <h1>Checkers AI</h1>
@@ -109,17 +109,17 @@
         let boardData = JSON.parse('{{ board|tojson|safe }}');
         let startPosition = null;
         let gameOver = false;
-    
+
         function renderBoard(board) {
             const boardDiv = document.getElementById('board');
             boardDiv.innerHTML = '';
-    
+
             board.forEach((row, x) => {
                 row.forEach((cell, y) => {
                     const cellDiv = document.createElement('div');
                     cellDiv.classList.add('cell');
                     cellDiv.classList.add((x + y) % 2 === 0 ? 'black-cell' : 'red-cell');
-    
+
                     if (cell) {
                         const pieceDiv = document.createElement('div');
                         pieceDiv.classList.add('piece');
@@ -137,19 +137,19 @@
                     } else {
                         cellDiv.onclick = () => movePiece(x, y);
                     }
-    
+
                     boardDiv.appendChild(cellDiv);
                 });
             });
         }
-    
+
         function selectPiece(x, y) {
             if (!gameOver) {
                 startPosition = { x, y };
                 console.log('Selected piece at:', startPosition);
             }
         }
-    
+
         function movePiece(endX, endY) {
             if (startPosition && !gameOver) {
                 const move = { startX: startPosition.x, startY: startPosition.y, endX, endY };
@@ -166,13 +166,13 @@
                         boardData = data.board;
                         gameOver = data.gameOver;
                         renderBoard(boardData);
-                        updateMessage(gameOver);
+                        updateMessage(data.message);
                     }
                 });
                 startPosition = null;
             }
         }
-    
+
         function resetGame() {
             fetch('/reset', {
                 method: 'POST'
@@ -182,23 +182,21 @@
                 boardData = data.board;
                 gameOver = data.gameOver;
                 renderBoard(boardData);
-                updateMessage(gameOver);
+                updateMessage("");
             });
         }
-    
-        function updateMessage(gameOver) {
+
+        function updateMessage(message) {
             const messageDiv = document.getElementById('message');
-            if (gameOver) {
-                messageDiv.innerText = "Game Over!";
+            if (message) {
+                messageDiv.innerText = message;
             } else {
                 messageDiv.innerText = "";
             }
         }
-    
-        renderBoard(boardData);
-        updateMessage(gameOver);
-    </script>
-    
 
+        renderBoard(boardData);
+        updateMessage("");
+    </script>
 </body>
 </html>
