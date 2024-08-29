@@ -63,8 +63,8 @@ def determine_winner():
         if board.current_player == 'black':
             return f"Red wins by default! 🎉 Final Score - Black: {black_score}, Red: {red_score}"
         else:
-            return f"Black wins by default! 🎉 Final Score - Black: {black_score}, Red: {red}"
+            return f"Black wins by default! 🎉 Final Score - Black: {black_score}, Red: {red_score}"
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(port=8000, debug=True)
