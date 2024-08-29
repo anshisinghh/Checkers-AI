@@ -1,0 +1,204 @@
+<!-- frontend/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Honk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        h1 {
+            font-family: 'Honk', sans-serif;
+            text-align: center;
+            font-size: 45px;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, lightblue, lightpink, lightyellow);
+            min-height: 100vh;
+        }
+        .board-wrapper {
+            background-color: white;
+            padding: 1em;
+            width: fit-content;
+            height: fit-content;
+            border-radius: 5px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 2px;
+            justify-content: center;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .black-cell { background-color: #256298; }
+        .red-cell { background-color: #a6d7ff; }
+        .piece {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 18px;
+            color: white;
+            position: relative;
+        }
+        .black-piece { background-color: black; }
+        .red-piece { background-color: red; }
+        .black-crowned { background: black; border-radius: 50%; position: relative; }
+        .black-crowned::after {
+            content: "👑";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+        .red-crowned { background: red; border-radius: 50%; position: relative; }
+        .red-crowned::after {
+            content: "👑";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+        .reset-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background-color: darkblue;
+            color: white;
+            border-radius: 5px;
+        }
+        .reset-button:hover {
+            background-color: lightblue;
+        }
+        .message {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+    
+</head>
+<body>
+    <h1>Checkers AI</h1>
+    <div class="board-wrapper">
+        <div class="board" id="board"></div>
+    </div>
+    <button class="reset-button" onclick="resetGame()">Reset Game</button>
+    <div class="message" id="message"></div>
+
+    <script>
+        let boardData = JSON.parse('{{ board|tojson|safe }}');
+        let startPosition = null;
+        let gameOver = false;
+    
+        function renderBoard(board) {
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+    
+            board.forEach((row, x) => {
+                row.forEach((cell, y) => {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.classList.add('cell');
+                    cellDiv.classList.add((x + y) % 2 === 0 ? 'black-cell' : 'red-cell');
+    
+                    if (cell) {
+                        const pieceDiv = document.createElement('div');
+                        pieceDiv.classList.add('piece');
+                        if (cell === 'B') {
+                            pieceDiv.classList.add('black-piece');
+                        } else if (cell === 'R') {
+                            pieceDiv.classList.add('red-piece');
+                        } else if (cell === 'BK') {
+                            pieceDiv.classList.add('black-crowned');
+                        } else if (cell === 'RK') {
+                            pieceDiv.classList.add('red-crowned');
+                        }
+                        pieceDiv.onclick = () => selectPiece(x, y);
+                        cellDiv.appendChild(pieceDiv);
+                    } else {
+                        cellDiv.onclick = () => movePiece(x, y);
+                    }
+    
+                    boardDiv.appendChild(cellDiv);
+                });
+            });
+        }
+    
+        function selectPiece(x, y) {
+            if (!gameOver) {
+                startPosition = { x, y };
+                console.log('Selected piece at:', startPosition);
+            }
+        }
+    
+        function movePiece(endX, endY) {
+            if (startPosition && !gameOver) {
+                const move = { startX: startPosition.x, startY: startPosition.y, endX, endY };
+                fetch('/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(move)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        boardData = data.board;
+                        gameOver = data.gameOver;
+                        renderBoard(boardData);
+                        updateMessage(gameOver);
+                    }
+                });
+                startPosition = null;
+            }
+        }
+    
+        function resetGame() {
+            fetch('/reset', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                boardData = data.board;
+                gameOver = data.gameOver;
+                renderBoard(boardData);
+                updateMessage(gameOver);
+            });
+        }
+    
+        function updateMessage(gameOver) {
+            const messageDiv = document.getElementById('message');
+            if (gameOver) {
+                messageDiv.innerText = "Game Over!";
+            } else {
+                messageDiv.innerText = "";
+            }
+        }
+    
+        renderBoard(boardData);
+        updateMessage(gameOver);
+    </script>
+    
+
+</body>
+</html>
